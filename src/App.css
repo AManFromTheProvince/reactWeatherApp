@@ -1,0 +1,20 @@
+body{
+  background-color: rgb(235, 239, 243);
+}
+
+.success_div{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#title{
+  align-self: center;
+  font-size: x-large;
+  font-weight: 900;
+}
+
+.result_div{
+  height: 89vh;
+  overflow: auto;
+}

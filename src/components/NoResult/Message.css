@@ -1,0 +1,18 @@
+.result{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 3em;
+}
+
+.result img{
+    width: 100%;
+    max-width: 400px;
+}
+
+.result p{
+    margin: 2em;
+    color: #888888;
+    text-align: center;
+}

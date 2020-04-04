@@ -1,0 +1,28 @@
+.weatherCard{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1em;
+    background-color: white;
+    width:100%;
+}
+
+#weather_icon{
+    width: 100%;
+    max-width: 50px;
+}
+
+#inactive_icon{
+    opacity: 0.2;
+    width: 100%;
+    max-width: 50px;
+}
+
+#active{
+    color: black;
+}
+
+#inactive{
+    color: #d1d1d1;
+}
