@@ -12,27 +12,120 @@ class App extends React.Component{
     this.state = {
       weatherC: [],
       weatherF: [],
-      city: "",
-      country:"",
+      city: "pagsanjan",
+      country:"ph",
       date: new Date(),
       currentCity: "",
       currentCountry: "",
       status: "0",
-      units: "metric"
+      units: "metric",
+      timezone: 0
     }
   }
 
+  sameMonthChange = (adjustDate, prevDate) => {
+    if (adjustDate < 10){
+      adjustDate = '0' + adjustDate
+    }
+    return(prevDate[0]+'-'+prevDate[1]+'-'+adjustDate)
+  }
+
+  checkDates = (adjustDate,adjustMonth,adjustYear,prevDate) => {
+    if (adjustMonth > 12) {   //if new year
+      adjustMonth = '01'
+      adjustYear = adjustYear.toString()
+      return(adjustYear+'-'+adjustMonth+'-'+adjustDate)
+    } else {
+      if (adjustMonth < 10){
+        return(prevDate[0]+'-0'+adjustMonth+'-'+adjustDate)
+      } else {
+        return(prevDate[0]+'-'+adjustMonth+'-'+adjustDate)
+      }
+    }
+  }
+
+  checkLeapYear = (year) => {
+    if (year%4 === 0){
+      if (year%100 === 0 || year %400 ===0){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  adjustTime = (splitDate, timezoneHrs) => {
+    let newDateTime = []
+    let prevDate = splitDate[0].split('-')
+    let prevTime = splitDate[1]
+    let adjustedTime = Number(prevTime.split(':')[0]) + timezoneHrs //adjust time or specifically, hours
+    const months31 = [1,3,5,7,8,10,12]
+
+    
+    if (adjustedTime >= 24){ //adjust the hours and date (since it overflowed into the next day)
+      adjustedTime = adjustedTime%24
+      if (adjustedTime < 10){ //add zero if less than 10
+        adjustedTime = "0" + adjustedTime.toString()
+      } else {
+        adjustedTime = adjustedTime.toString()
+      }
+      let adjustDate = Number(prevDate[2]) + 1
+      let adjustMonth = Number(prevDate[1]) + 1
+      let adjustYear = Number(prevDate[0]) + 1
+
+      if (adjustDate > 31 && Number(prevDate[1]) in months31){
+        adjustDate = '01'
+        newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+      } else if (adjustDate === 31 && !Number(prevDate[1]) in months31 && Number(prevDate[1]) != 2){ // for months with 30 days only
+        adjustDate = '01'
+        newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+      } else if (Number(prevDate[1]) === 2){    //special case for february
+        if (this.checkLeapYear){
+          if (adjustDate > 29){
+            newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+          } else {
+            newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
+          }
+        } else {
+          if (adjustDate > 28){
+            newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+          } else {
+            newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
+          }
+        }
+      
+      }else {         //within the same month
+        newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
+      }
+      newDateTime.push(adjustedTime+':00:00')
+    } else {
+      newDateTime.push(prevDate[0]+'-'+prevDate[1]+'-'+prevDate[2])
+      newDateTime.push(adjustedTime+':00:00')
+    }
+    newDateTime = newDateTime.join(' ')
+    console.log(newDateTime)
+    return(newDateTime)
+  }
+
   setWeather = (data, units) => {
+    console.log(data)
     this.setState({status: data.cod})
     if (data.cod === "200"){
+      let timezoneHrs = (data.city.timezone)/(60*60)
       this.setState({ currentCity: data.city.name,
-        currentCountry: data.city.country})
+        currentCountry: data.city.country,
+        timezone:timezoneHrs})
 
       let tempWeathers = []
       let collectionWeather = []
-      let prevDate = data.list[0].dt_txt.split(' ')[0]
+
+      let splitDate = data.list[0].dt_txt.split(' ')  // ['2020-04-05', '15:00:00']
+      let newDateTime = this.adjustTime(splitDate, timezoneHrs)
+      let prevDate = newDateTime.split(' ')[0]
       for (let i = 0; i < data.list.length; i++){
-        let currentDate = data.list[i].dt_txt.split(' ')[0]
+        splitDate = data.list[i].dt_txt.split(' ')
+        data.list[i].dt_txt = this.adjustTime(splitDate, timezoneHrs)
+        let loopNewDateTime = data.list[i].dt_txt
+        let currentDate = loopNewDateTime.split(' ')[0]
         if (prevDate !== currentDate){
           collectionWeather.push(tempWeathers)
           prevDate = currentDate;
@@ -40,6 +133,7 @@ class App extends React.Component{
         }
         tempWeathers.push(data.list[i]);
       }
+      collectionWeather.push(tempWeathers)
       
       if (units === "metric"){
         this.setState({weatherC: collectionWeather})
