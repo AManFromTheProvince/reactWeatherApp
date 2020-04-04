@@ -12,8 +12,8 @@ class App extends React.Component{
     this.state = {
       weatherC: [],
       weatherF: [],
-      city: "pagsanjan",
-      country:"ph",
+      city: "",
+      country:"",
       date: new Date(),
       currentCity: "",
       currentCountry: "",
