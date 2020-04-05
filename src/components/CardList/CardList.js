@@ -71,6 +71,7 @@ const CardList = ({weatherC, weatherF, units}) => {
             <div className = "cardList">
                 {first}
             </div>
+            
             <h3>{date2}</h3>
             <div className = "cardList">
                 {second}

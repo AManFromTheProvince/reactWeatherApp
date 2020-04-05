@@ -23,6 +23,31 @@ class App extends React.Component{
     }
   }
 
+
+  fixTimeFormat = (adjustedTime) => {
+    if (adjustedTime < 10){ //add zero if less than 10
+      return("0" + adjustedTime.toString())
+    } else {
+      return(adjustedTime.toString())
+    }
+  }
+
+  februaryFix = (prevDate, adjustDate, adjustMonth, adjustYear) => {
+    if (this.checkLeapYear(prevDate[0])){
+      if (adjustDate > 29){
+        return(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+      } else {
+        return(this.sameMonthChange(adjustDate, prevDate))
+      }
+    } else {
+      if (adjustDate > 28){
+        return(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+      } else {
+        return(this.sameMonthChange(adjustDate, prevDate))
+      }
+    }
+  }
+
   sameMonthChange = (adjustDate, prevDate) => {
     if (adjustDate < 10){
       adjustDate = '0' + adjustDate
@@ -63,11 +88,7 @@ class App extends React.Component{
     
     if (adjustedTime >= 24){ //adjust the hours and date (since it overflowed into the next day)
       adjustedTime = adjustedTime%24
-      if (adjustedTime < 10){ //add zero if less than 10
-        adjustedTime = "0" + adjustedTime.toString()
-      } else {
-        adjustedTime = adjustedTime.toString()
-      }
+      adjustedTime = this.fixTimeFormat(adjustedTime)
       let adjustDate = Number(prevDate[2]) + 1
       let adjustMonth = Number(prevDate[1]) + 1
       let adjustYear = Number(prevDate[0]) + 1
@@ -75,34 +96,43 @@ class App extends React.Component{
       if (adjustDate > 31 && Number(prevDate[1]) in months31){
         adjustDate = '01'
         newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
-      } else if (adjustDate === 31 && !Number(prevDate[1]) in months31 && Number(prevDate[1]) != 2){ // for months with 30 days only
+      } else if (adjustDate === 31 && !Number(prevDate[1]) in months31 && Number(prevDate[1]) !== 2){ // for months with 30 days only
         adjustDate = '01'
         newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
       } else if (Number(prevDate[1]) === 2){    //special case for february
-        if (this.checkLeapYear){
-          if (adjustDate > 29){
-            newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
-          } else {
-            newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
-          }
-        } else {
-          if (adjustDate > 28){
-            newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
-          } else {
-            newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
-          }
-        }
-      
+        newDateTime.push(this.februaryFix(prevDate, adjustDate, adjustMonth, adjustYear))
       }else {         //within the same month
         newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
       }
       newDateTime.push(adjustedTime+':00:00')
+    } else if (adjustedTime < 0){
+      adjustedTime = 24+adjustedTime;
+      adjustedTime = this.fixTimeFormat(adjustedTime);
+      //fix date
+      let adjustDate = Number(prevDate[2]) - 1
+      let adjustMonth = Number(prevDate[1]) - 1
+      let adjustYear = Number(prevDate[0]) - 1
+
+      if (Number(prevDate[2]) === 1 && Number(prevDate[1])===1){    //rolled back to the prev year
+        newDateTime.push(adjustYear+'-12-31') //go back to dec 31, year-1
+      } else if (Number(prevDate[2])===1 && !adjustMonth in months31 && adjustMonth !== 2) {  //to months with 30 days not including february
+        adjustDate = '30'
+        newDateTime.push(this.checkDates(adjustDate, adjustMonth, adjustYear, prevDate))
+      } else if (Number(prevDate[2]) ===1 && adjustMonth in months31) {
+        adjustDate = "31"
+        newDateTime.push(this.checkDates(adjustDate,adjustMonth,adjustYear,prevDate))
+      } else if (adjustMonth === 2){
+        newDateTime.push(this.februaryFix(prevDate, adjustDate, adjustMonth, adjustYear))
+      } else {
+        newDateTime.push(this.sameMonthChange(adjustDate, prevDate))
+      }
+      newDateTime.push(adjustedTime+':00:00')
     } else {
+      adjustedTime = this.fixTimeFormat(adjustedTime)
       newDateTime.push(prevDate[0]+'-'+prevDate[1]+'-'+prevDate[2])
       newDateTime.push(adjustedTime+':00:00')
     }
     newDateTime = newDateTime.join(' ')
-    console.log(newDateTime)
     return(newDateTime)
   }
 
